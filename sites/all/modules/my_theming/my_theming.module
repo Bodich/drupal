@@ -1,0 +1,294 @@
+<?php 
+ 
+/**
+*
+* implements hook_menu()
+*/
+ function my_theming_menu(){
+ $items=array();
+        $items['my-theme'] = array(
+                'title'         => 'My page',
+                'page callback' => 'my_theming_page',
+                'access callback' => TRUE
+            );
+        $items['table'] = array( 
+                'title' => t('Page with table'), 
+                'page callback' => 'main_table', 
+                'access arguments' => array('TRUE'), 
+            ); 
+        $items['fieldset'] = array( 
+                'title' => t('Page with fieldset'), 
+                'page callback' => 'fieldset', 
+                'access arguments' => array('TRUE'), 
+            ); 
+        $items['image_style'] = array( 
+                'title' => t('image_style'), 
+                'page callback' => 'image_style', 
+                'access arguments' => array('TRUE'), 
+            ); 
+         $items['example'] = array( 
+                'title' => t('example'), 
+                'page callback' => 'example', 
+                'access arguments' => array('TRUE'), 
+            );
+          $items['Contacts'] = array( 
+                'title' => t('example_form'), 
+                'page callback' => 'example_form', 
+                'access arguments' => array('TRUE'),
+                'access arguments' => array('access content'),
+                'description' => 'My form',
+                'type' => MENU_CALLBACK,
+            );
+          $items['Contacts/thank'] = array( 
+                'title' => t('example_form'), 
+                'page callback' => 'thank', 
+                'access arguments' => array('TRUE'),
+            );
+         
+         
+    return $items;
+        
+}
+function thank(){
+    return 'Thank You!';
+}
+function  my_theming_form_alter(&$form_id, $form) {
+    //echo '<pre>';
+     //print_r ($form_id);
+     // $form_id['name']['#title'] = 'change with hook_form_alter';
+   return  $form_id;
+    
+       
+   	  
+}
+function example_form(){
+    
+ return drupal_get_form('my_theming_my_form');
+}
+function my_theming_my_form($form_state) {
+     drupal_add_library('system', 'drupal.collapse');
+ $form['name'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Example form drupal'),
+    '#collapsible' => TRUE, // распахивающийся
+    '#collapsed' => FALSE,
+      
+  );
+  $form['name']['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('name'),
+    '#required' => TRUE,
+    '#description' => t("Please enter your first name."), // добавлена подпись
+    '#size' => 20, // добавлена ширина поля
+    '#maxlength' => 20, // добавлена максимальная длина строки ввод
+  );
+  $form['name']['last_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('last_name'),
+    '#size' => 20, // добавлена ширина поля
+    '#maxlength' => 20, // добавлена максимальная длина строки ввод
+  );
+  $form['name']['nikname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('nikname'),
+    '#required' => TRUE,
+    '#size' => 20, // добавлена ширина поля
+    '#maxlength' => 20, // добавлена максимальная длина строки ввод
+      
+  );
+  $form['name']['tel_number'] = array(
+    '#type' => 'textfield',
+    '#title' => t('tel_num'),
+    '#size' => 20, // добавлена ширина поля
+    '#maxlength' => 20, // добавлена максимальная длина строки ввод
+  );
+  $form['name']['email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('email'),
+    '#required' => TRUE,
+    '#size' => 20, // добавлена ширина поля
+    '#maxlength' => 20, // добавлена максимальная длина строки ввод
+  );
+  $form['name']['text'] = array(
+    '#type' => 'textarea',
+    '#required' => TRUE,
+    '#title' => t('text'),
+    '#default_value' => 'Повідомлення',
+     );
+  $form['name']['drop'] = array(
+  '#type' => 'select',
+  '#title' =>  'test',
+  //'#default_value' => array(),
+  '#options' => array(
+         'title' => t('Ukraine'), 
+         'teaser' => t('Russia'), 
+         'fulltext' => t('USA'),
+            ),
+             );
+    $form['name']['sex'] = array(
+       '#type' => 'radios', 
+       '#title' => t('choose sex'), 
+       '#default_value' => variable_get('men', 0), 
+       '#options' => array(t('men'),t('women')),
+           );
+     $form['name']['agree'] = array(
+       '#type' => 'checkboxes', 
+       '#title' => t('agree with ruls ?'), 
+       '#options' => array(
+       'status' => t('yes'), 
+             ),
+          );
+  
+   $form['name']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+  return $form;
+}
+
+   function my_theming_my_form_validate($form, &$form_state) {
+      $email = $form_state['values']['email'];
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            form_set_error('email', t('email is not valid'));
+        }
+        $tel_number = $form_state['values']['tel_number'];
+
+        $int_options = array(
+    "options"=>array
+            (
+                "min_range"=>0,
+                "max_range"=>9999999999
+            )
+        );
+        if ($tel_number){ 
+        if(!filter_var($tel_number, FILTER_VALIDATE_INT, $int_options)){
+            form_set_error('tel_number', t('tel number is not valid'));
+           } 
+        }
+     }
+function my_theming_my_form_submit($form, &$form_state) {
+    
+    $form_state['redirect'] = 'Contacts/thank'; 
+  //drupal_set_message(t('The form has been submitted.'));
+}
+ function example(){
+ $arg1 = array('node' => 'some text','title' => 'title');
+ 
+  $theme_hook = theme('my_theming_example_template',$arg1);
+    
+  return    $theme_hook ; 
+      }
+  function  my_theming_theme() {
+        $themes = array (
+                'my_theming_example_template' => array(
+                    'template' => 'example',
+                    'variables' => array('node' => null,'title' => null),
+                ),
+            );
+            return $themes;
+        }
+        
+// function my_theming_example() {
+  //  return  theme('my_theming_example_template');
+    //    }
+ 
+ function my_theming_page(){
+     $items = array(
+            l('main', null),
+            l('vegitables', 'category/vegetables'),
+            l('fruktu', 'category/fruits'),
+            l('tukvu', 'category/pumpkin'),
+     );
+        
+    return theme('item_list', array('items' => $items));
+    
+    }
+ function main_table(){
+      // создаем переменную, которая содержит массив  
+  $header = array( 
+    // дальше создаем еще массив, где содержится данные перовой ячейки
+    array('data' => t('Header cell1')),   
+    // второй ячейки 
+    array('data' => t('Header cell2')),   
+    // и третей ячейки 
+    array('data' => t('Header cell3'))   
+  ); 
+  // создаем первую строчку 
+  $rows[] = array( 
+    // вывод 1 ячейки в 1 строчке 
+    array('data' => t('Row 1 – Cell 1')),  
+    // вторая ячейка 
+    array('data' => t('Row 1 – Cell 2')),  
+    // третья ячейка  
+    array('data' => t('Row 1 – Cell 3'))   
+  ); 
+  //вывод второго ряда 
+  $rows[] = array(  
+    array('data' => t('Row 2 – Cell 1')),  
+    array('data' => t('Row 2 – Cell 2')), 
+    array('data' => t('Row 2 – Cell 3')) 
+  ); 
+ 
+  return theme('table', array('header' => $header, 'rows'=> $rows));
+    
+     
+ }
+ function fieldset(){
+       drupal_add_library('system', 'drupal.collapse');
+       
+ $edit_element = array( 
+                      // оглавление списка 
+                      '#title'          => t('Table for edit node'), 
+                      // содержимое fieldset-а 
+                      '#children'    => t('option1<br>option2<br>'), 
+                      // список у нас складной 
+                      '#collapsible' => true,   
+                      // и свернутый 
+                      '#collapsed'  => true, 
+                      // в атрибутах указываем, что надо использовать указанные классы
+                      '#attributes'  => array(  
+                                              'class' => array('collapsible', 'collapsed')
+                                              ), 
+                      ); 
+// помещаем в $fieldset_edit функцию, которая выведет нам поле
+return $fieldset_edit = theme('fieldset', array('element' => $edit_element)); 
+   
+ }
+ function image_style(){
+    $image_settings = array(
+            'style_name' => 'thumbnail',
+            'path' => 'imgres.jpg',
+            'alt' => 'imgres.jpg',
+            'title' => 'imgres.jpg',
+            //'width' => '500',
+            'attributes' => array('class' => 'image'),
+            'getsize' => FALSE,
+            );
+      return theme('image_style', $image_settings);
+   }
+/* 
+   function my_theming_preprocess_page(&$variables){
+      
+     $variables['title'] = '888';
+     $vars['title'] = '55 ';
+  }
+  function my_theming_preprocess_node(&$variables){
+      
+     $variables['title'] = '888';
+     $vars['title'] = '55 ';
+  }
+ function my_theming_preprocess_block(){
+    
+     echo'22';
+ }
+  function my_theming_preprocess_field(){
+    
+     echo'999';
+ }
+//
+  
+ */
+  function my_theming_preprocess_views_view(&$vars) {
+   // echo '<pre>';
+    //  print_r($vars['view']);
+  }

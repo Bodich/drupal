@@ -1,0 +1,175 @@
+<?php 
+ 
+/**
+*
+* implements hook_menu()
+*/
+function my_module_menu(){
+ $items=array();
+        $items['my-page'] = array(
+                'title'         => 'My page',
+                'page callback' => 'my_first_page',
+                'access callback' => TRUE
+            );
+         $items['error-404'] = array(
+                'title'         => 'My page',
+                'page callback' => 'error_404',
+                'access callback' => TRUE
+            );
+         $items['error-403'] = array(
+                'title'         => 'My page',
+                'page callback' => 'error_403',
+                'access callback' => TRUE
+            );
+
+         $items['mytestpage/%'] = array(
+                'title' => 'My test page',
+                'page callback' => 'url_page_callback',
+                'access callback' => TRUE,
+                'page arguments' => array(1),
+                'type' => MENU_CALLBACK,
+        );
+        
+    return $items;
+        
+}
+function url_page_callback($var = NULL) {
+    if (is_numeric($var)) {
+            return t('Number in url - @var',array('@var' => $var));
+    } else {
+            return t('Letters in url - @var',array('@var' => $var));
+    }
+}
+ 
+/**
+*
+* function my_first_page()
+*/
+ function my_first_page(){
+     return t("Hello world !!www!");
+   }
+    function error_404(){
+       return t("page not founde :(");
+        } 
+   function error_403(){
+      return t("access denided   :(");
+        }
+
+  function my_module_block_info(){
+    $blocks = array();
+    $blocks[1]['info'] = 'Список пользователей';
+    $blocks[2]['info'] = 'testing';
+   return $blocks;
+} 
+     function my_module_block_view($delta = ''){
+         if(user_access('view page example')){
+      $block = array(); //инициализируем пустой массив блока
+      switch ($delta){
+     case 1: //такая же delta как мы возвращали в hook_block_info()
+              $block['subject'] = 'Пользователи'; //выводим заголовок блока
+              $block['content'] = ''; //инициализируем строковую переменную
+              $query = db_select('users', 'u') //запрос выборки пользователей
+                ->fields('u', array('uid', 'name')) //выбор полей
+                ->orderBy('u.uid', 'ASC') //сортируем по убыванию
+                ->range(0, 5) //выбор пяти пользователей
+                ->execute(); //запрос к БД
+              $users = $query->fetchAll(PDO::FETCH_ASSOC); //обрабатывает запрос в виде массива
+              foreach($users as $user){
+                  $block['content'] .='<div><a href="' . base_path() . 'user/' . $user['uid'] . '">' . $user['name'] . '</a></div>';
+                  // base_path() - функция возвращает путь к корню сайта
+              }
+           $block['content'] .= 'some text in block';   
+     break;
+     case 2: //такая же delta как мы возвращали в hook_block_info()
+         $block['subject'] = 'bla bla bla'; //выводим заголовок блока
+         $block['content'] = '';
+         $block['content'] .= 'some text in block 2222'; //инициализируем строковую переменную   
+     break;
+      }
+      
+      
+     }else {$block['content'] = 'access to view this content is denied.';}
+ return $block;
+      }
+ 
+   function my_module_permission(){     
+   return array( 'view page example' => array( 
+                                                'title' => t('View page example'), 
+                                                'description' => t('View simple page example'),
+                                             ),
+                 'view page'=>  array( 
+                                                'title' => t('View page'), 
+                                                'description' => t('View simple'),
+                                             ),
+       
+                        );}
+ 
+ function my_module_user_view($node){
+            echo 'dsdsdsddddddddddds';
+        }   
+function my_module_node_view($node) {
+            drupal_set_message(t('подллючен hook_node_view!'));
+           // echo $node->title.'<br>';
+         // echo '<pre>';
+         //print_r($node);
+            //print_r($form);
+  } 
+  function my_module_node_insert($node) {
+            echo 'pd';
+             drupal_set_message(t('подллючен hook_node_insert!'));
+                    db_insert('mytable')
+                        ->fields(array(
+                        'nid' => 3, 
+                        'extra' => '$node->extra',
+                    ))
+                        ->execute();
+             }    
+       function my_module_node_access($node, $op, $account) {
+           echo 'sds';
+  $type = is_string($node) ? $node : $node->type;
+
+  if (in_array($type, node_permissions_get_configured_types())) {
+    if ($op == 'create' && user_access('create ' . $type . ' content', $account)) {
+      return NODE_ACCESS_ALLOW;
+    }
+
+    if ($op == 'update') {
+      if (user_access('edit any ' . $type . ' content', $account) || (user_access('edit own ' . $type . ' content', $account) && ($account->uid == $node->uid))) {
+        return NODE_ACCESS_ALLOW;
+      }
+    }
+
+    if ($op == 'delete') {
+      if (user_access('delete any ' . $type . ' content', $account) || (user_access('delete own ' . $type . ' content', $account) && ($account->uid == $node->uid))) {
+        return NODE_ACCESS_ALLOW;
+      }
+    }
+  }
+
+  // Returning nothing from this function would have the same effect.
+  return NODE_ACCESS_IGNORE;
+}
+//my_module_node_insert($node);
+       //  function my_module_insert($node) {
+         //         db_query("INSERT INTO {mytable} (nid, extra)
+           //                      VALUES (%d, '%s')", $node->nid, $node->extra);
+           // }
+   /*    
+ function my_module_perm() {
+  return array('do cool stuff', 'do uncool stuff');
+ }
+
+ function my_module_init() {
+  if (user_access('do cool stuff')) {
+   drupal_set_message(t('You can do cool stuff!'));
+  }
+  elseif (user_access('do uncool stuff')) {
+    drupal_set_message(t('You can do uncool stuff.'));
+  }
+  elseif (!user_access('do cool stuff') && !user_access('do uncool stuff')) {
+   drupal_set_message(t("You can't do stuff at all."));
+  }
+}
+  * 
+  
+}*/

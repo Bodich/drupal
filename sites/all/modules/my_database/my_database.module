@@ -1,0 +1,232 @@
+<?php
+ function my_database_menu() {
+    $items = array();
+    $items['form_insert'] = array(
+        'title' => 'form_insert',
+        'page callback' => 'form_insert',
+        'access callback' => TRUE
+    );
+    $items['all_mesages'] = array(
+        'title' => 'all_mesages',
+        'page callback' => 'all_mesages',
+        'access callback' => TRUE
+    );
+     $items['dell_mesage'] = array(
+        'title' => '',
+        'page callback' => 'dell_mesage',
+        'access callback' => TRUE
+    );
+    return $items;
+}
+ function my_database_schema() {
+    $schema['custom_table'] = array(
+        'description' => 'The base table for mymodule.',
+        'fields' => array(
+             'id' => array(
+                'type' => 'serial',
+                'unsigned' => true,
+                'not null' => true,
+            ),
+            'number' => array(
+                'type' => 'int',
+                'length' => 10,
+                'not null' => true,
+            ),
+            'teaser' => array(
+                'type' => 'varchar',
+                'length' => 150,
+                'not null' => true,
+                'default' => '',
+            ),
+            'text' => array(
+                'type' => 'text',
+                'not null' => true,
+            ),
+        ),
+        'primary key' => array('id'),
+    );
+
+    return $schema;
+}
+ function my_database_install() {
+    drupal_install_schema('my_database');
+}
+ function my_database_uninstall() {
+    drupal_uninstall_schema('my_database');
+}
+ function dell_mesage(){
+     return drupal_get_form('my_database_f'); 
+ }
+function my_database_f(){
+     $form['delete'] = array(
+            '#type' => 'submit',
+            '#value' => t('YES'),
+            '#submit' => array('my_delete_function'),
+        );
+    $form['submit'] = array(
+            '#type' => 'submit',
+            '#value' => t('NO'),
+        );
+    return $form;
+}
+function my_database_f_submit($form, &$form_state) {
+    $form_state['redirect'] = array('all_mesages');
+}
+ function my_delete_function($form, &$form_state) {
+        $nid = $_GET['id'];
+        $num_deleted = db_delete('custom_table')
+        ->condition('id', $nid)
+        ->execute();
+    drupal_set_message('delete is sucessfully');
+    $form_state['redirect'] = array('all_mesages');
+}
+ function form_insert() {
+    return drupal_get_form('my_database_form');
+}
+ function my_database_form($form_state) {
+    drupal_add_library('system', 'drupal.collapse');
+    $ok = false;
+    if (isset($_GET['id'])) {
+        $ok = $_GET['id'];
+        $query = db_select('custom_table', 'c')
+                ->fields('c', array('id', 'number', 'teaser', 'text'))
+                ->orderBy('id', 'ASC')
+                ->condition('c.id', $ok, '=')
+                ->execute()
+                ->fetchAll();
+         foreach ($query as $v) {
+            $ob = $v;
+        }
+    }
+    $form['name'] = array(
+        '#type'         => 'fieldset',
+        '#title'        => t('Enter you data'),
+        '#collapsible'  => TRUE,  
+        '#collapsed'    => FALSE,
+    );
+    $form['name']['number'] = array(
+        '#type'         => 'textfield',
+        '#title'        => t('number'),
+        '#description'  => t("Please enter your first name."),  
+        '#size'         => 20,  
+        '#maxlength'    => 20,
+        '#default_value'=> $ok ? $ob->number : '',
+    );
+    $form['name']['teaser'] = array(
+        '#type'          => 'textfield',
+        '#title'         => t('teaser'),
+        '#size'          => 20,  
+        '#maxlength'     => 140,  
+        '#default_value' => $ok ? $ob->teaser : '',
+    );
+    $form['name']['text'] = array(
+        '#type'  => 'textarea',
+        '#title' => t('text'),
+        '#size'  => 20,  
+        '#default_value' => $ok ? $ob->text : '',
+    );
+    $form['name']['submit'] = array(
+        '#type'  => 'submit',
+        '#value' => t('Submit'),
+    );
+    return $form;
+}
+ function my_database_form_validate($form, &$form_state) {
+    $teaser = $form_state['values']['teaser'];
+    if (strlen($teaser) > 150) {
+        form_set_error('teaser', t('teaser is very long'));
+    }
+    $tel_number = $form_state['values']['number'];
+    $int_options = array(
+        "options" => array
+            (
+            "min_range" => 0,
+            "max_range" => 9999999
+        )
+    );
+    if ($tel_number) {
+        if (!filter_var($tel_number, FILTER_VALIDATE_INT, $int_options)) {
+            form_set_error('number', t('number is not valid'));
+        }
+    }
+}
+ function my_database_form_submit($form, &$form_state) {
+    $number = $form_state['values']['number'];
+    $teaser = $form_state['values']['teaser'];
+    $text   = $form_state['values']['text'];
+    if (!isset($_GET['id'])) {
+        $values = array(
+            array(
+                'number' => $number,
+                'teaser' => $teaser,
+                'text'   => $text,
+            ),
+        );
+        $query = db_insert('custom_table')->fields(array('number', 'teaser', 'text'));
+        foreach ($values as $record) {
+            $query->values($record);
+        }
+        $res = $query->execute();
+        if ($res)
+            drupal_set_message('insert is sucessfully');
+    }else {
+      $query = db_update('custom_table')
+        ->fields(array(
+            'number'    => $number,
+            'teaser'    => $teaser,
+            'text'      => $text,
+           ))
+        ->condition('id', $_GET['id'], '=')
+        ->execute();
+       if($query) drupal_set_message('update is successfuly');
+    }
+}
+ function all_mesages() {
+    $header_table_edit = array(
+        array('data' => t('number')),
+        array('data' => t('teaser')),
+        array('data' => t('text')),
+        array('data' => t('Link to edit')),
+        array('data' => t('Link to dell'))
+    );
+    $query = db_select('custom_table', 'c')
+            ->fields('c', array('id', 'number', 'teaser', 'text'))
+            ->orderBy('id', 'ASC')
+            ->execute()
+            ->fetchAll();
+     foreach ($query as $record_edit_table) {
+        $rows_table_edit[] =
+                array(
+                     array(
+                        'data' => $record_edit_table->number
+                    ),
+                    array(
+                        'data' => $record_edit_table->teaser
+                    ),
+                    array(
+                        'data' => $record_edit_table->text
+                    ),
+                    array(
+                         'data' => l(t('edit message'), 'form_insert', array(
+                            'query' => array(
+                                'id' => $record_edit_table->id),
+                                )
+                        )
+                    ),
+                    array(
+                         'data' => l(t('dell message'), 'dell_mesage', array(
+                            'query' => array(
+                                'id' => $record_edit_table->id),
+                                )
+                         )
+                    )
+           );
+    }
+   $caption_table_edit = t('Table for edit mesages');
+     return theme('table', array(
+                'header'  => $header_table_edit,
+                'rows'    => $rows_table_edit,
+                'caption' => $caption_table_edit
+                    )
+    );
+}
